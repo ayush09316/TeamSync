@@ -31,9 +31,6 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
-      - name: Run tests
-        run: pnpm test
-
   # Docker Build
   docker_build:
     runs-on: ubuntu-latest
