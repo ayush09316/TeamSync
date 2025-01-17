@@ -3,13 +3,13 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main           # Prod
-      - 'release/*'    # Staging
-      - dev            # Dev
+      - main # Prod
+      - "release/*" # Staging
+      - dev # Dev
   pull_request:
     branches:
       - main
-      - 'release/*'
+      - "release/*"
       - dev
 
 jobs:
@@ -30,11 +30,15 @@ jobs:
 
       - name: Run lint
         run: pnpm lint
+        continue-on-error: false
+
+      # - name: Run tests
+      #   run: pnpm test
 
   # Deploy to Environment (Dev, Staging, Prod)
   deploy:
     runs-on: ubuntu-latest
-    needs: docker_build
+    needs: install_and_test
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -44,31 +48,34 @@ jobs:
           if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
             echo "Deploying to production"
             echo "ENV=production" >> $GITHUB_ENV
-            echo "DOCKER_TAG=my-app:${{ github.sha }}" >> $GITHUB_ENV
-          elif [[ $GITHUB_REF == 'refs/heads/release/*' ]]; then
+          elif [[ $GITHUB_REF == refs/heads/release/* ]]; then
             echo "Deploying to staging"
             echo "ENV=staging" >> $GITHUB_ENV
-            echo "DOCKER_TAG=my-app:staging-${{ github.sha }}" >> $GITHUB_ENV
           elif [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
             echo "Deploying to development"
             echo "ENV=development" >> $GITHUB_ENV
-            echo "DOCKER_TAG=my-app:dev-${{ github.sha }}" >> $GITHUB_ENV
           fi
 
-      - name: Deploy Docker image
+      - name: Deploy to Vercel
         run: |
-          echo "Deploying ${DOCKER_TAG} to ${ENV} environment"
-          # You can add your specific deploy command for each environment here
-          # Example: kubectl apply or any cloud provider commands depending on your setup
+          if [[ $ENV == "production" ]]; then
+            vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel deploy --token ${{ secrets.VERCEL_TOKEN }}
+          fi
 
   # Slack Notification (Optional)
   slack_notify:
     runs-on: ubuntu-latest
     needs: deploy
+    if: ${{ env.ENV != 'development' }}
     steps:
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.22.0
         with:
           slack_token: ${{ secrets.SLACK_TOKEN }}
           channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
-          text: 'CI/CD Pipeline Status: ${{ job.status }} - Deployed to ${{ env.ENV }} environment'
+          text: >
+            CI/CD Pipeline Status: ${{ job.status }} -
+            Branch: ${{ github.ref_name }} -
+            Environment: ${{ env.ENV }}
