@@ -7,6 +7,10 @@
     "ts-rest",
     "api contract"
   ],
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "start": "echo 'Contracts do not need a start script'"
+  },
   "author": "",
   "license": "ISC",
   "dependencies": {
