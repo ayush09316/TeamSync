@@ -32,43 +32,41 @@ jobs:
         run: pnpm lint
         continue-on-error: false
 
-      # - name: Run tests
-      #   run: pnpm test
+      - name: Build Application
+        run: pnpm build
 
   # Deploy to Environment (Dev, Staging, Prod)
-  deploy:
-    runs-on: ubuntu-latest
-    needs: install_and_test
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+deploy:
+  runs-on: ubuntu-latest
+  needs: install_and_test
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Set up environment variables
-        run: |
-          if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-            echo "Deploying to production"
-            echo "ENV=production" >> $GITHUB_ENV
-          elif [[ $GITHUB_REF == refs/heads/release/* ]]; then
-            echo "Deploying to staging"
-            echo "ENV=staging" >> $GITHUB_ENV
-          elif [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
-            echo "Deploying to development"
-            echo "ENV=development" >> $GITHUB_ENV
-          fi
+    - name: Set up environment variables
+      id: set_env
+      run: |
+        case $GITHUB_REF in
+          "refs/heads/main") ENV="production" ;;
+          "refs/heads/release/"*) ENV="staging" ;;
+          "refs/heads/dev") ENV="development" ;;
+        esac
+        echo "ENV=$ENV" >> $GITHUB_ENV
+        echo "::set-output name=env::$ENV"
 
-      - name: Deploy to Vercel
-        run: |
-          if [[ $ENV == "production" ]]; then
-            vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }}
-          else
-            vercel deploy --token ${{ secrets.VERCEL_TOKEN }}
-          fi
+    - name: Deploy to Vercel
+      run: |
+        if [[ $ENV == "production" ]]; then
+          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }}
+        else
+          vercel deploy --token ${{ secrets.VERCEL_TOKEN }}
+        fi
 
   # Slack Notification (Optional)
   slack_notify:
     runs-on: ubuntu-latest
     needs: deploy
-    if: ${{ env.ENV != 'development' }}
+    if: ${{ needs.deploy.outputs.environment != 'development' }}
     steps:
       - name: Notify Slack
         uses: slackapi/slack-github-action@v1.22.0
@@ -78,4 +76,4 @@ jobs:
           text: >
             CI/CD Pipeline Status: ${{ job.status }} -
             Branch: ${{ github.ref_name }} -
-            Environment: ${{ env.ENV }}
+            Environment: ${{ needs.deploy.outputs.environment }}
