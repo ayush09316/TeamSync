@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react";
 
-declare interface PricingPlan {
+interface PricingPlan {
   name: string;
   price: string;
   desc?: string;
@@ -9,7 +9,7 @@ declare interface PricingPlan {
   isPopular?: boolean;
 }
 
-declare interface FeatureCardProps {
+interface FeatureCardProps {
   title: string;
   description: string;
   points: string[];

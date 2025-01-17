@@ -1,4 +1,5 @@
-import React from 'react';
+import { PricingPlan } from "@/types";
+import React from "react";
 
 const PricingCard: React.FC<PricingPlan> = ({
   name,
@@ -11,7 +12,7 @@ const PricingCard: React.FC<PricingPlan> = ({
   return (
     <div
       className={`p-6 min-w-[300px]  rounded-lg ${
-        isPopular ? 'border border-green-400 bg-dark-300' : ' bg-dark-400'
+        isPopular ? "border border-green-400 bg-dark-300" : " bg-dark-400"
       }`}
     >
       {isPopular && (
@@ -23,11 +24,11 @@ const PricingCard: React.FC<PricingPlan> = ({
       <p className="text-slate-400">
         <span className={`mt-2 text-2xl font-semibold text-white`}>
           {price}
-        </span>{' '}
+        </span>{" "}
         /month
       </p>
       <button
-        className={`mt-6 w-full font-semibold py-3 px-4 ${isPopular ? 'bg-green-400 hover:bg-green-500 text-black' : 'bg-dark-200 hover:bg-dark-100 text-white'}  rounded-full `}
+        className={`mt-6 w-full font-semibold py-3 px-4 ${isPopular ? "bg-green-400 hover:bg-green-500 text-black" : "bg-dark-200 hover:bg-dark-100 text-white"}  rounded-full `}
       >
         {buttonText}
       </button>

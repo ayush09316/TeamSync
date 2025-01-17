@@ -30,52 +30,38 @@ jobs:
 
       - name: Run lint
         run: pnpm lint
-        continue-on-error: false
 
-      # - name: Run tests
-      #   run: pnpm test
+      - name: Build Application
+        run: pnpm build
 
   # Deploy to Environment (Dev, Staging, Prod)
-  deploy:
+  deploy-vercel:
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
-    needs: install_and_test
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-      - name: Set up environment variables
-        run: |
-          if [[ $GITHUB_REF == 'refs/heads/main' ]]; then
-            echo "Deploying to production"
-            echo "ENV=production" >> $GITHUB_ENV
-          elif [[ $GITHUB_REF == refs/heads/release/* ]]; then
-            echo "Deploying to staging"
-            echo "ENV=staging" >> $GITHUB_ENV
-          elif [[ $GITHUB_REF == 'refs/heads/dev' ]]; then
-            echo "Deploying to development"
-            echo "ENV=development" >> $GITHUB_ENV
-          fi
-
-      - name: Deploy to Vercel
-        run: |
-          if [[ $ENV == "production" ]]; then
-            vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }}
-          else
-            vercel deploy --token ${{ secrets.VERCEL_TOKEN }}
-          fi
-
-  # Slack Notification (Optional)
-  slack_notify:
-    runs-on: ubuntu-latest
-    needs: deploy
-    if: ${{ env.ENV != 'development' }}
-    steps:
-      - name: Notify Slack
-        uses: slackapi/slack-github-action@v1.22.0
+      - name: Set up Vercel CLI
+        uses: amondnet/vercel-action@v20
         with:
-          slack_token: ${{ secrets.SLACK_TOKEN }}
-          channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
-          text: >
-            CI/CD Pipeline Status: ${{ job.status }} -
-            Branch: ${{ github.ref_name }} -
-            Environment: ${{ env.ENV }}
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # # Slack Notification (Optional)
+  # slack_notify:
+  #   runs-on: ubuntu-latest
+  #   needs: deploy
+  #   if: ${{ needs.deploy.outputs.environment != 'development' }}
+  #   steps:
+  #     - name: Notify Slack
+  #       uses: slackapi/slack-github-action@v1.22.0
+  #       with:
+  #         slack_token: ${{ secrets.SLACK_TOKEN }}
+  #         channel_id: ${{ secrets.SLACK_CHANNEL_ID }}
+  #         text: >
+  #           CI/CD Pipeline Status: ${{ job.status }} -
+  #           Branch: ${{ github.ref_name }} -
+  #           Environment: ${{ needs.deploy.outputs.environment }}
